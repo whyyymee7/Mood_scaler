@@ -43,6 +43,9 @@ function preload() {
 function setup() {
   createCanvas(900, 550);
 
+  // Очистка истории при обновлении страницы
+  localStorage.removeItem("moodHistory");
+
   input = createInput("");
   input.position(30, 45);
   styleInput(input);
@@ -122,9 +125,9 @@ function saveMood(value) {
   let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
   history.push(value);
 
-  // максимум 10 записей
-  if (history.length > 10) {
-    history.splice(0, history.length - 10);
+  // максимум 30 записей
+  if (history.length > 30) {
+    history.splice(0, history.length - 30);
   }
 
   localStorage.setItem("moodHistory", JSON.stringify(history));
@@ -192,19 +195,17 @@ function drawTimeline() {
   noFill();
 
   if (history.length < 4) {
-    // Если меньше 4 точек, рисуем обычной линией
     beginShape();
     for (let i = 0; i < history.length; i++) {
-      let x = map(i, 0, 9, x0, x0 + w);
+      let x = map(i, 0, 29, x0, x0 + w);
       let y = map(history[i], 1, 10, y0, y0 - h);
       vertex(x, y);
     }
     endShape();
   } else {
-    // Для 4 и более точек — сглаженная кривая
     beginShape();
     for (let i = 0; i < history.length; i++) {
-      let x = map(i, 0, 9, x0, x0 + w);
+      let x = map(i, 0, 29, x0, x0 + w);
       let y = map(history[i], 1, 10, y0, y0 - h);
       curveVertex(x, y);
     }
@@ -214,7 +215,7 @@ function drawTimeline() {
   drawingContext.shadowBlur = 0;
 
   for (let i = 0; i < history.length; i++) {
-    let x = map(i, 0, 9, x0, x0 + w);
+    let x = map(i, 0, 29, x0, x0 + w);
     let y = map(history[i], 1, 10, y0, y0 - h);
     noStroke();
     fill(0, 200, 255);
