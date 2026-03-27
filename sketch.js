@@ -34,16 +34,9 @@ let input;
 
 // ---------- preload ----------
 function preload() {
-  images[0] = loadImage("https://i.imgur.com/Eb3yJuZ.png");
-  images[1] = loadImage("https://i.imgur.com/MUPcf8u.png");
-  images[2] = loadImage("https://i.imgur.com/V4dPbG0.png");
-  images[3] = loadImage("https://i.imgur.com/5Qfr5cu.png");
-  images[4] = loadImage("https://i.imgur.com/yBhbB1u.png");
-  images[5] = loadImage("https://i.imgur.com/35fri81.png");
-  images[6] = loadImage("https://i.imgur.com/fGu9peL.png");
-  images[7] = loadImage("https://i.imgur.com/nL73OdJ.png");
-  images[8] = loadImage("https://i.imgur.com/NmvBzjZ.png");
-  images[9] = loadImage("https://i.imgur.com/s9eNcR5.png");
+  for (let i = 0; i < 10; i++) {
+    images[i] = loadImage(`https://i.imgur.com/${["Eb3yJuZ","MUPcf8u","V4dPbG0","5Qfr5cu","yBhbB1u","35fri81","fGu9peL","nL73OdJ","NmvBzjZ","s9eNcR5"][i]}.png`);
+  }
 }
 
 // ---------- setup ----------
@@ -73,7 +66,7 @@ function draw() {
 
   // эффекты частиц
   let chaos = map(mood, 1, 10, 0.3, 2.5);
-  let spread = map(mood, 1, 10, 0.1, 1.2);
+  let spread = map(mood, 1, 10, 0.2, 1.2);
 
   blendMode(ADD);
   for (let p of particles) {
@@ -82,12 +75,14 @@ function draw() {
   }
   blendMode(BLEND);
 
+  // отпечатки
   for (let i = imprints.length - 1; i >= 0; i--) {
     imprints[i].update();
     imprints[i].display();
     if (imprints[i].life <= 0) imprints.splice(i, 1);
   }
 
+  // задержка картинки
   if (lastMoodChangeTime > 0 && millis() - lastMoodChangeTime > 5000) {
     showImage = true;
   }
@@ -139,25 +134,24 @@ class Particle {
   }
 
   update(chaos, spread) {
-    let tx = width/2 + (noise(this.offset, frameCount*0.01)-0.5) * width*spread;
-    let ty = height/2 + (noise(this.offset+100, frameCount*0.01)-0.5) * height*spread;
+    // шумовое движение по экрану
+    this.x += (noise(this.offset, frameCount * 0.01) - 0.5) * spread * 200;
+    this.y += (noise(this.offset + 100, frameCount * 0.01) - 0.5) * spread * 200;
 
-    this.x = lerp(this.x, tx, 0.02);
-    this.y = lerp(this.y, ty, 0.02);
-
+    // небольшая рандомизация
     this.x += random(-chaos, chaos);
     this.y += random(-chaos, chaos);
 
+    // реакция на мышь
     let d = dist(this.x, this.y, mouseX, mouseY);
-    if (d < 100) {
-      this.x += (this.x - mouseX)*0.01;
-      this.y += (this.y - mouseY)*0.01;
+    if (d < 120) {
+      this.x += (this.x - mouseX) * 0.02;
+      this.y += (this.y - mouseY) * 0.02;
     }
 
-    if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
-      this.x = random(width);
-      this.y = random(height);
-    }
+    // границы
+    if (this.x < 0 || this.x > width) this.x = random(width);
+    if (this.y < 0 || this.y > height) this.y = random(height);
   }
 
   display() {
