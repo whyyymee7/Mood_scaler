@@ -34,16 +34,9 @@ let input;
 
 // -------------------- preload --------------------
 function preload() {
-  images[0] = loadImage("https://i.imgur.com/Eb3yJuZ.png");
-  images[1] = loadImage("https://i.imgur.com/MUPcf8u.png");
-  images[2] = loadImage("https://i.imgur.com/V4dPbG0.png");
-  images[3] = loadImage("https://i.imgur.com/5Qfr5cu.png");
-  images[4] = loadImage("https://i.imgur.com/yBhbB1u.png");
-  images[5] = loadImage("https://i.imgur.com/35fri81.png");
-  images[6] = loadImage("https://i.imgur.com/fGu9peL.png");
-  images[7] = loadImage("https://i.imgur.com/nL73OdJ.png");
-  images[8] = loadImage("https://i.imgur.com/NmvBzjZ.png");
-  images[9] = loadImage("https://i.imgur.com/s9eNcR5.png");
+  for (let i = 0; i < 10; i++) {
+    images[i] = loadImage(`https://i.imgur.com/${["Eb3yJuZ","MUPcf8u","V4dPbG0","5Qfr5cu","yBhbB1u","35fri81","fGu9peL","nL73OdJ","NmvBzjZ","s9eNcR5"][i]}.png`);
+  }
 }
 
 // -------------------- setup --------------------
@@ -184,7 +177,7 @@ class Particle {
 // -------------------- timeline --------------------
 function drawTimeline() {
   let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
-  if (history.length < 2) return;
+  if (history.length < 1) return;
 
   let x0 = 480, y0 = 520, w = 380, h = 130;
   stroke(255, 40);
@@ -197,13 +190,27 @@ function drawTimeline() {
   stroke(0, 200, 255);
   strokeWeight(2);
   noFill();
-  beginShape();
-  for (let i = 0; i < history.length; i++) {
-    let x = map(i, 0, 9, x0, x0 + w);
-    let y = map(history[i], 1, 10, y0, y0 - h);
-    curveVertex(x, y);
+
+  if (history.length < 4) {
+    // Если меньше 4 точек, рисуем обычной линией
+    beginShape();
+    for (let i = 0; i < history.length; i++) {
+      let x = map(i, 0, 9, x0, x0 + w);
+      let y = map(history[i], 1, 10, y0, y0 - h);
+      vertex(x, y);
+    }
+    endShape();
+  } else {
+    // Для 4 и более точек — сглаженная кривая
+    beginShape();
+    for (let i = 0; i < history.length; i++) {
+      let x = map(i, 0, 9, x0, x0 + w);
+      let y = map(history[i], 1, 10, y0, y0 - h);
+      curveVertex(x, y);
+    }
+    endShape();
   }
-  endShape();
+
   drawingContext.shadowBlur = 0;
 
   for (let i = 0; i < history.length; i++) {
