@@ -1,23 +1,3 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Эмоциональное поле</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      background: #080812;
-      font-family: 'Courier New', monospace;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-<script>
 let mood = 5;
 let targetMood = 5;
 
@@ -54,9 +34,16 @@ let input;
 
 // ---------- preload ----------
 function preload() {
-  for (let i = 0; i < 10; i++) {
-    images[i] = loadImage(`https://i.imgur.com/${["Eb3yJuZ","MUPcf8u","V4dPbG0","5Qfr5cu","yBhbB1u","35fri81","fGu9peL","nL73OdJ","NmvBzjZ","s9eNcR5"][i]}.png`);
-  }
+  images[0] = loadImage("https://i.imgur.com/Eb3yJuZ.png");
+  images[1] = loadImage("https://i.imgur.com/MUPcf8u.png");
+  images[2] = loadImage("https://i.imgur.com/V4dPbG0.png");
+  images[3] = loadImage("https://i.imgur.com/5Qfr5cu.png");
+  images[4] = loadImage("https://i.imgur.com/yBhbB1u.png");
+  images[5] = loadImage("https://i.imgur.com/35fri81.png");
+  images[6] = loadImage("https://i.imgur.com/fGu9peL.png");
+  images[7] = loadImage("https://i.imgur.com/nL73OdJ.png");
+  images[8] = loadImage("https://i.imgur.com/NmvBzjZ.png");
+  images[9] = loadImage("https://i.imgur.com/s9eNcR5.png");
 }
 
 // ---------- setup ----------
@@ -86,7 +73,7 @@ function draw() {
 
   // эффекты частиц
   let chaos = map(mood, 1, 10, 0.3, 2.5);
-  let spread = map(mood, 1, 10, 0.2, 1.2);
+  let spread = map(mood, 1, 10, 0.1, 1.2);
 
   blendMode(ADD);
   for (let p of particles) {
@@ -95,14 +82,12 @@ function draw() {
   }
   blendMode(BLEND);
 
-  // отпечатки
   for (let i = imprints.length - 1; i >= 0; i--) {
     imprints[i].update();
     imprints[i].display();
     if (imprints[i].life <= 0) imprints.splice(i, 1);
   }
 
-  // задержка картинки
   if (lastMoodChangeTime > 0 && millis() - lastMoodChangeTime > 5000) {
     showImage = true;
   }
@@ -154,24 +139,25 @@ class Particle {
   }
 
   update(chaos, spread) {
-    // шумовое движение по экрану
-    this.x += (noise(this.offset, frameCount * 0.01) - 0.5) * spread * 200;
-    this.y += (noise(this.offset + 100, frameCount * 0.01) - 0.5) * spread * 200;
+    let tx = width/2 + (noise(this.offset, frameCount*0.01)-0.5) * width*spread;
+    let ty = height/2 + (noise(this.offset+100, frameCount*0.01)-0.5) * height*spread;
 
-    // небольшая рандомизация
+    this.x = lerp(this.x, tx, 0.02);
+    this.y = lerp(this.y, ty, 0.02);
+
     this.x += random(-chaos, chaos);
     this.y += random(-chaos, chaos);
 
-    // реакция на мышь
     let d = dist(this.x, this.y, mouseX, mouseY);
-    if (d < 120) {
-      this.x += (this.x - mouseX) * 0.02;
-      this.y += (this.y - mouseY) * 0.02;
+    if (d < 100) {
+      this.x += (this.x - mouseX)*0.01;
+      this.y += (this.y - mouseY)*0.01;
     }
 
-    // границы
-    if (this.x < 0 || this.x > width) this.x = random(width);
-    if (this.y < 0 || this.y > height) this.y = random(height);
+    if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+      this.x = random(width);
+      this.y = random(height);
+    }
   }
 
   display() {
@@ -208,46 +194,45 @@ class Imprint {
   }
 }
 
-// ---------- timeline (упрощённый, без времени) ----------
+// ---------- timeline ----------
 function drawTimeline() {
   let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
   if (history.length < 2) return;
 
   let x0 = 480, y0 = 520, w = 380, h = 130;
-  let x1 = x0 + w;
-  let y1 = y0 - h;
 
-  // Рамка графика
   stroke(255, 40);
   noFill();
-  rect(x0, y1, w, h, 8);
+  rect(x0, y0 - h, w, h, 8);
 
-  // Минимальные подписи (только для ориентира)
-  fill(150);
-  textSize(10);
-  text("1", x0 - 12, map(1, 1, 10, y0, y1) + 3);
-  text("10", x0 - 15, map(10, 1, 10, y0, y1) + 3);
-
-  // Линия
   stroke(0, 200, 255);
   strokeWeight(2);
   noFill();
   beginShape();
   for (let i = 0; i < history.length; i++) {
-    let x = map(i, 0, history.length - 1, x0, x1);
-    let y = map(history[i].value, 1, 10, y0, y1);
+    let x = map(i, 0, 14, x0, x0 + w);
+    let y = map(history[i].value, 1, 10, y0, y0 - h);
     curveVertex(x, y);
   }
   endShape();
 
-  // Точки
   for (let i = 0; i < history.length; i++) {
-    let x = map(i, 0, history.length - 1, x0, x1);
-    let y = map(history[i].value, 1, 10, y0, y1);
+    let x = map(i, 0, 14, x0, x0 + w);
+    let y = map(history[i].value, 1, 10, y0, y0 - h);
     noStroke();
     fill(0, 200, 255);
     ellipse(x, y, 5);
+
+    fill(180);
+    textSize(10);
+    text(formatTime(new Date(history[i].time)), x-20, y0 + 15);
   }
+}
+
+function formatTime(date) {
+  let h = nf(date.getHours(), 2);
+  let m = nf(date.getMinutes(), 2);
+  return `${h}:${m}`;
 }
 
 // ---------- mood image ----------
@@ -290,6 +275,3 @@ function styleInput(input) {
   input.style('padding', '8px');
   input.style('font-size', '14px');
 }
-</script>
-</body>
-</html>
