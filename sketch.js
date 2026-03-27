@@ -31,13 +31,15 @@ let imageScale = 0;
 let imageAlpha = 0;
 
 let input;
-let topOffset = 30; // отступ сверху для input и текста
-let textSpacing = 35; // расстояние между input и текстом
+let topMargin = 20;
+let sideMargin = 20;
+let textSpacing = 8;
 
 // -------------------- preload --------------------
 function preload() {
+  const imgIds = ["Eb3yJuZ","MUPcf8u","V4dPbG0","5Qfr5cu","yBhbB1u","35fri81","fGu9peL","nL73OdJ","NmvBzjZ","s9eNcR5"];
   for (let i = 0; i < 10; i++) {
-    images[i] = loadImage(`https://i.imgur.com/${["Eb3yJuZ","MUPcf8u","V4dPbG0","5Qfr5cu","yBhbB1u","35fri81","fGu9peL","nL73OdJ","NmvBzjZ","s9eNcR5"][i]}.png`);
+    images[i] = loadImage(`https://i.imgur.com/${imgIds[i]}.png`);
   }
 }
 
@@ -45,7 +47,6 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  // Очистка истории при обновлении страницы
   localStorage.removeItem("moodHistory");
 
   input = createInput("");
@@ -57,9 +58,7 @@ function setup() {
     if (e.key === "Enter") handleMoodInput();
   });
 
-  for (let i = 0; i < 220; i++) {
-    particles.push(new Particle());
-  }
+  for (let i = 0; i < 220; i++) particles.push(new Particle());
 
   lastMoodChangeTime = millis();
 }
@@ -219,9 +218,8 @@ function drawMoodImage(scaleVal, alphaVal) {
 function drawUI() {
   let moodIndex = constrain(targetMood - 1, 0, 9);
 
-  // Расположение текста ниже input
-  let textX = input.x + 0;
-  let textY = input.y + input.height + 10;
+  let textX = sideMargin;
+  let textY = input.y + input.height + textSpacing;
 
   fill(255, 180);
   textSize(18);
@@ -243,7 +241,7 @@ function styleInput(input) {
 
 // -------------------- position input --------------------
 function positionInput() {
-  input.position(30, topOffset);
+  input.position(sideMargin, topMargin);
 }
 
 // -------------------- resize --------------------
