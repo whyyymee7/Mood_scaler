@@ -27,18 +27,18 @@ let imageScale = 0;
 let imageAlpha = 0;
 
 function preload() {
-  // Загружаем картинки прямо с Imgur
+  // PNG картинки с Imgur
   let urls = [
-    "https://i.imgur.com/B4rsCjc.jpg", // 1
-    "https://i.imgur.com/MUPcf8u.jpg", // 2
-    "https://i.imgur.com/V4dPbG0.jpg", // 3
-    "https://i.imgur.com/5Qfr5cu.jpg", // 4
-    "https://i.imgur.com/yBhbB1u.jpg", // 5
-    "https://i.imgur.com/35fri81.jpg", // 6
-    "https://i.imgur.com/fGu9peL.jpg", // 7
-    "https://i.imgur.com/nL73OdJ.jpg", // 8
-    "https://i.imgur.com/NmvBzjZ.jpg", // 9
-    "https://i.imgur.com/s9eNcR5.jpg"  // 10
+    "https://i.imgur.com/B4rsCjc.png", // 1
+    "https://i.imgur.com/Eb3yJuZ.png", // 2
+    "https://i.imgur.com/V4dPbG0.png", // 3
+    "https://i.imgur.com/5Qfr5cu.png", // 4
+    "https://i.imgur.com/yBhbB1u.png", // 5
+    "https://i.imgur.com/35fri81.png", // 6
+    "https://i.imgur.com/fGu9peL.png", // 7
+    "https://i.imgur.com/nL73OdJ.png", // 8
+    "https://i.imgur.com/NmvBzjZ.png", // 9
+    "https://i.imgur.com/s9eNcR5.png"  // 10
   ];
   for (let i = 0; i < urls.length; i++) {
     images[i] = loadImage(urls[i]);
