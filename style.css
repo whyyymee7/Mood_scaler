@@ -1,9 +1,17 @@
 body {
   margin: 0;
-  overflow: hidden;
-  background-color: #0a0a0a;
-  font-family: Arial, sans-serif;
+  background: #0a0a0a;
+  font-family: sans-serif;
+  color: white;
 }
+
 input {
-  font-size: 16px;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #0a0a0a;
+  color: #fff;
+  border: 1px solid #333;
+  padding: 6px;
+  width: 150px;
 }
