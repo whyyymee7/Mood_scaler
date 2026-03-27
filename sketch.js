@@ -239,10 +239,6 @@ function drawMoodImage(scaleVal, alphaVal) {
 function drawUI() {
   let moodIndex = constrain(targetMood - 1, 0, 9);
 
-  fill(255, textAlpha);
-  textSize(16);
-  text("ЭМОЦИОНАЛЬНОЕ ПОЛЕ", 30, height - 70);
-
   fill(255, 180);
   textSize(12);
   text("Введите настроение (1–10) и нажмите Enter", 30, 35);
