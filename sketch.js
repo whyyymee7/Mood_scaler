@@ -31,6 +31,8 @@ let imageScale = 0;
 let imageAlpha = 0;
 
 let input;
+let topOffset = 30; // отступ сверху для input и текста
+let textSpacing = 35; // расстояние между input и текстом
 
 // -------------------- preload --------------------
 function preload() {
@@ -182,23 +184,13 @@ function drawTimeline() {
   strokeWeight(2);
   noFill();
 
-  if (history.length < 4) {
-    beginShape();
-    for (let i = 0; i < history.length; i++) {
-      let x = map(i, 0, 29, x0, x0 + w);
-      let y = map(history[i], 1, 10, y0, y0 - h);
-      vertex(x, y);
-    }
-    endShape();
-  } else {
-    beginShape();
-    for (let i = 0; i < history.length; i++) {
-      let x = map(i, 0, 29, x0, x0 + w);
-      let y = map(history[i], 1, 10, y0, y0 - h);
-      curveVertex(x, y);
-    }
-    endShape();
+  beginShape();
+  for (let i = 0; i < history.length; i++) {
+    let x = map(i, 0, 29, x0, x0 + w);
+    let y = map(history[i], 1, 10, y0, y0 - h);
+    curveVertex(x, y);
   }
+  endShape();
 
   drawingContext.shadowBlur = 0;
 
@@ -227,16 +219,20 @@ function drawMoodImage(scaleVal, alphaVal) {
 function drawUI() {
   let moodIndex = constrain(targetMood - 1, 0, 9);
 
-  // текст ниже input
+  // Расположение текста ниже input
+  let textX = input.x + 0;
+  let textY = input.y + input.height + 10;
+
   fill(255, 180);
   textSize(18);
-  text("Настроение: " + moodNames[moodIndex], 30, 90);
+  text("Настроение: " + moodNames[moodIndex], textX, textY);
 
   fill(180, textAlpha);
   textSize(14);
-  text(moodTips[moodIndex], 30, 115);
+  text(moodTips[moodIndex], textX, textY + 25);
 }
 
+// -------------------- style input --------------------
 function styleInput(input) {
   input.style('background', '#0a0a0a');
   input.style('color', '#fff');
@@ -245,8 +241,9 @@ function styleInput(input) {
   input.style('font-size', '16px');
 }
 
+// -------------------- position input --------------------
 function positionInput() {
-  input.position(30, 45);
+  input.position(30, topOffset);
 }
 
 // -------------------- resize --------------------
