@@ -19,16 +19,12 @@ let moodNames = [
   "Слегка бодро", "Хорошо", "Очень хорошо", "Отлично", "Эйфория", "Великолепно"
 ];
 
-let textAlpha = 0;
-
 let images = [];
 let lastMoodChangeTime = 0;
 let showImage = false;
 let imageScale = 0;
 let imageAlpha = 0;
-
-// история настроений
-let moodHistory = []; // {date: ..., value: ...}
+let textAlpha = 0;
 
 function preload() {
   for (let i = 1; i <= 10; i++) {
@@ -39,11 +35,7 @@ function preload() {
 function setup() {
   createCanvas(900, 550);
 
-  let input = createInput("");
-  input.attribute('placeholder', 'Введите настроение 1–10');
-  input.position(30, 30);
-  styleInput(input);
-
+  let input = select('#moodInput');
   input.input(() => {
     let val = int(input.value());
     if (val >= 1 && val <= 10) {
@@ -52,18 +44,9 @@ function setup() {
       showImage = false;
       imageScale = 0;
       imageAlpha = 0;
-
-      // сохраняем в localStorage с текущей датой
-      let now = new Date();
-      moodHistory.push({ date: now.toISOString(), value: val });
-      localStorage.setItem('moodHistory', JSON.stringify(moodHistory));
+      input.value(''); // очищаем поле сразу после ввода
     }
-    input.value(''); // очищаем поле сразу после ввода
   });
-
-  // загружаем историю из localStorage
-  let stored = localStorage.getItem('moodHistory');
-  if (stored) moodHistory = JSON.parse(stored);
 
   for (let i = 0; i < 220; i++) {
     particles.push(new Particle());
@@ -75,7 +58,6 @@ function setup() {
 function draw() {
   mood = lerp(mood, targetMood, 0.03);
   textAlpha = lerp(textAlpha, 255, 0.05);
-
   background(10, 10, 20);
 
   if (millis() - lastMoodChangeTime > 5000) {
@@ -99,8 +81,6 @@ function draw() {
     imageAlpha = lerp(imageAlpha, 255, 0.05);
     drawMoodImage(imageScale, imageAlpha);
   }
-
-  drawMoodGraph();
 }
 
 class Particle {
@@ -117,10 +97,8 @@ class Particle {
     let t = frameCount * 0.01 * speed;
     this.targetX = width/2 + (noise(this.offset + frameCount*0.01)-0.5)*width*spread;
     this.targetY = height/2 + (noise(this.offset + 100 + frameCount*0.01)-0.5)*height*spread;
-
     this.x = lerp(this.x, this.targetX, 0.02);
     this.y = lerp(this.y, this.targetY, 0.02);
-
     this.x += map(noise(this.offset, t), 0, 1, -chaos, chaos);
     this.y += map(noise(this.offset + 100, t), 0, 1, -chaos, chaos);
   }
@@ -129,13 +107,11 @@ class Particle {
     let r = map(mood, 1, 10, 120, 255);
     let b = map(mood, 1, 10, 255, 120);
     let pulse = sin(frameCount * 0.03) * 2;
-
     noStroke();
     for (let i = 3; i > 0; i--) {
       fill(r, 80, b, 15);
       ellipse(this.x, this.y, this.size * i * 2 + pulse);
     }
-
     fill(r, 150, b, 180);
     ellipse(this.x, this.y, this.size + pulse);
   }
@@ -144,7 +120,6 @@ class Particle {
 function drawMoodImage(scaleVal, alphaVal) {
   let moodIndex = constrain(floor(mood) - 1, 0, 9);
   let img = images[moodIndex];
-
   push();
   imageMode(CENTER);
   tint(255, alphaVal);
@@ -156,47 +131,12 @@ function drawMoodImage(scaleVal, alphaVal) {
 
 function drawUI() {
   let moodIndex = constrain(floor(mood) - 1, 0, 9);
-
   fill(255, textAlpha);
   textSize(16);
   text("ЭМОЦИОНАЛЬНОЕ ПОЛЕ", 30, height - 70);
-
   textSize(18);
   text("Настроение: " + moodNames[moodIndex], 30, height - 40);
-
   fill(180, textAlpha);
   textSize(14);
   text(moodTips[moodIndex], 30, height - 15);
-}
-
-function styleInput(input) {
-  input.style('background', '#0a0a0a');
-  input.style('color', '#fff');
-  input.style('border', '1px solid #333');
-  input.style('padding', '6px');
-}
-
-// график истории настроений
-function drawMoodGraph() {
-  if (moodHistory.length < 2) return;
-
-  push();
-  translate(600, 50);
-  stroke(255, 150);
-  noFill();
-  beginShape();
-  for (let i = 0; i < moodHistory.length; i++) {
-    let y = map(moodHistory[i].value, 1, 10, 200, 0);
-    let x = map(i, 0, moodHistory.length - 1, 0, 250);
-    vertex(x, y);
-  }
-  endShape();
-
-  fill(255);
-  textSize(12);
-  for (let i = 0; i < moodHistory.length; i+=Math.ceil(moodHistory.length/5)) {
-    let date = new Date(moodHistory[i].date);
-    text(date.toLocaleDateString(), map(i, 0, moodHistory.length - 1, 0, 250), 210);
-  }
-  pop();
 }
