@@ -29,18 +29,17 @@ let imageAlpha = 0;
 let textAlpha = 0;
 
 function preload() {
-  // ссылки на картинки с Imgur
   images = [
-    loadImage('https://i.imgur.com/B4rsCjc.png'), // mood 1
-    loadImage('https://i.imgur.com/Eb3yJuZ.png'), // mood 2
-    loadImage('https://i.imgur.com/V4dPbG0.png'), // mood 3
-    loadImage('https://i.imgur.com/5Qfr5cu.png'), // mood 4
-    loadImage('https://i.imgur.com/yBhbB1u.png'), // mood 5
-    loadImage('https://i.imgur.com/35fri81.png'), // mood 6
-    loadImage('https://i.imgur.com/fGu9peL.png'), // mood 7
-    loadImage('https://i.imgur.com/nL73OdJ.png'), // mood 8
-    loadImage('https://i.imgur.com/NmvBzjZ.png'), // mood 9
-    loadImage('https://i.imgur.com/s9eNcR5.png')  // mood 10
+    loadImage('https://i.imgur.com/B4rsCjc.png'),
+    loadImage('https://i.imgur.com/Eb3yJuZ.png'),
+    loadImage('https://i.imgur.com/V4dPbG0.png'),
+    loadImage('https://i.imgur.com/5Qfr5cu.png'),
+    loadImage('https://i.imgur.com/yBhbB1u.png'),
+    loadImage('https://i.imgur.com/35fri81.png'),
+    loadImage('https://i.imgur.com/fGu9peL.png'),
+    loadImage('https://i.imgur.com/nL73OdJ.png'),
+    loadImage('https://i.imgur.com/NmvBzjZ.png'),
+    loadImage('https://i.imgur.com/s9eNcR5.png')
   ];
 }
 
@@ -52,7 +51,6 @@ function setup() {
   input.attribute('placeholder', 'Введите настроение 1–10');
   styleInput(input);
 
-  // обработка только по Enter
   input.elt.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
       let val = int(input.value());
@@ -63,28 +61,21 @@ function setup() {
         imageScale = 0;
         imageAlpha = 0;
         moodHistory.push({time: millis(), mood: targetMood});
-        input.value(""); // очищаем поле после Enter
+        input.value("");
       }
     }
   });
 
-  for (let i = 0; i < 220; i++) {
-    particles.push(new Particle());
-  }
-
+  for (let i = 0; i < 220; i++) particles.push(new Particle());
   lastMoodChangeTime = millis();
 }
 
 function draw() {
   mood = lerp(mood, targetMood, 0.03);
   textAlpha = lerp(textAlpha, 255, 0.05);
-
   background(10, 10, 20);
 
-  // проверяем, прошло ли 5 секунд без изменения настроения
-  if (millis() - lastMoodChangeTime > 5000) {
-    showImage = true;
-  }
+  if (millis() - lastMoodChangeTime > 5000) showImage = true;
 
   let chaos = map(mood, 1, 10, 0.3, 1.8);
   let speed = map(mood, 1, 10, 0.1, 0.5);
