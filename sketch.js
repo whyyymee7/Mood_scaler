@@ -3,13 +3,14 @@ let targetMood = 5;
 let particles = [];
 let moodHistory = [];
 
-let maxPoints = 15;
-
 let images = [];
+
 let lastMoodChangeTime = 0;
 let showImage = false;
 let imageScale = 0;
 let imageAlpha = 0;
+
+let inputField;
 
 function preload() {
   images = [
@@ -29,16 +30,17 @@ function preload() {
 function setup() {
   createCanvas(900, 550);
 
-  loadHistory();
+  // 👉 ЧИСТИМ старые кривые данные автоматически
+  localStorage.removeItem('moodData');
 
-  let input = createInput("");
-  input.position(30, 30);
-  input.attribute('placeholder', 'Введите настроение 1–10');
-  styleInput(input);
+  inputField = createInput("");
+  inputField.position(30, 30);
+  inputField.attribute('placeholder', '1–10 + Enter');
+  styleInput(inputField);
 
-  input.elt.addEventListener("keydown", (e) => {
+  inputField.elt.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
-      let val = int(input.value());
+      let val = int(inputField.value());
 
       if (val >= 1 && val <= 10) {
         targetMood = val;
@@ -48,15 +50,11 @@ function setup() {
 
         moodHistory.push({
           mood: val,
-          time: now.toLocaleTimeString().slice(0,5)
+          time: now.getTime(),
+          label: now.toLocaleTimeString().slice(0,5)
         });
 
-        if (moodHistory.length > maxPoints) {
-          moodHistory.shift();
-        }
-
-        saveHistory();
-        input.value("");
+        inputField.value("");
       }
     }
   });
@@ -87,6 +85,8 @@ function draw() {
   }
 
   drawGraph();
+
+  drawCurrentValue();
 }
 
 class Particle {
@@ -124,12 +124,19 @@ function drawImage() {
 }
 
 function drawGraph() {
-  if (moodHistory.length < 2) return;
-
   let w = 320;
   let h = 140;
   let x0 = width - w - 20;
   let y0 = height - h - 20;
+
+  let now = Date.now();
+  let timeWindow = 1000 * 60 * 3; // 3 минуты
+
+  let visible = moodHistory.filter(p => now - p.time <= timeWindow);
+
+  if (visible.length < 2) return;
+
+  let minTime = now - timeWindow;
 
   // фон
   noStroke();
@@ -142,18 +149,18 @@ function drawGraph() {
   noFill();
   beginShape();
 
-  for (let i = 0; i < moodHistory.length; i++) {
-    let x = map(i, 0, maxPoints - 1, x0 + 10, x0 + w - 10);
-    let y = map(moodHistory[i].mood, 1, 10, y0 + h - 20, y0 + 10);
+  for (let p of visible) {
+    let x = map(p.time, minTime, now, x0 + 10, x0 + w - 10);
+    let y = map(p.mood, 1, 10, y0 + h - 20, y0 + 10);
     vertex(x, y);
   }
 
   endShape();
 
-  // точки + время
-  for (let i = 0; i < moodHistory.length; i++) {
-    let x = map(i, 0, maxPoints - 1, x0 + 10, x0 + w - 10);
-    let y = map(moodHistory[i].mood, 1, 10, y0 + h - 20, y0 + 10);
+  // точки
+  for (let p of visible) {
+    let x = map(p.time, minTime, now, x0 + 10, x0 + w - 10);
+    let y = map(p.mood, 1, 10, y0 + h - 20, y0 + 10);
 
     fill(0, 255, 255);
     noStroke();
@@ -161,7 +168,7 @@ function drawGraph() {
 
     fill(180);
     textSize(10);
-    text(moodHistory[i].time, x - 15, y0 + h - 5);
+    text(p.label, x - 15, y0 + h - 5);
   }
 
   // рамка
@@ -170,20 +177,15 @@ function drawGraph() {
   rect(x0, y0, w, h, 12);
 }
 
+function drawCurrentValue() {
+  fill(255);
+  textSize(16);
+  text("Текущее настроение: " + floor(mood), 30, 80);
+}
+
 function styleInput(input) {
   input.style('background', '#0a0a0a');
   input.style('color', '#fff');
   input.style('border', '1px solid #333');
   input.style('padding', '6px');
-}
-
-function saveHistory() {
-  localStorage.setItem('moodData', JSON.stringify(moodHistory));
-}
-
-function loadHistory() {
-  let data = localStorage.getItem('moodData');
-  if (data) {
-    moodHistory = JSON.parse(data);
-  }
 }
