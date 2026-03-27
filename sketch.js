@@ -1,4 +1,3 @@
-// Mood Scaler — визуализация настроения с частицами, картинками и графиком
 let mood = 5;
 let targetMood = 5;
 let particles = [];
@@ -22,55 +21,50 @@ let moodNames = [
   "Слегка бодро", "Хорошо", "Очень хорошо", "Отлично", "Эйфория", "Великолепно"
 ];
 
-let textAlpha = 0;
-
-// картинки через ссылки
 let images = [];
-let imageLinks = [
-  "https://i.imgur.com/B4rsCjc.jpg",
-  "https://i.imgur.com/MUPcf8u.jpg",
-  "https://i.imgur.com/V4dPbG0.jpg",
-  "https://i.imgur.com/5Qfr5cu.jpg",
-  "https://i.imgur.com/yBhbB1u.jpg",
-  "https://i.imgur.com/35fri81.jpg",
-  "https://i.imgur.com/fGu9peL.jpg",
-  "https://i.imgur.com/nL73OdJ.jpg",
-  "https://i.imgur.com/NmvBzjZ.jpg",
-  "https://i.imgur.com/s9eNcR5.jpg"
-];
-
 let lastMoodChangeTime = 0;
 let showImage = false;
 let imageScale = 0;
 let imageAlpha = 0;
+let textAlpha = 0;
 
 function preload() {
-  for (let i = 0; i < 10; i++) {
-    images[i] = loadImage(imageLinks[i]);
-  }
+  // ссылки на картинки с Imgur
+  images = [
+    loadImage('https://i.imgur.com/B4rsCjc.png'), // mood 1
+    loadImage('https://i.imgur.com/Eb3yJuZ.png'), // mood 2
+    loadImage('https://i.imgur.com/V4dPbG0.png'), // mood 3
+    loadImage('https://i.imgur.com/5Qfr5cu.png'), // mood 4
+    loadImage('https://i.imgur.com/yBhbB1u.png'), // mood 5
+    loadImage('https://i.imgur.com/35fri81.png'), // mood 6
+    loadImage('https://i.imgur.com/fGu9peL.png'), // mood 7
+    loadImage('https://i.imgur.com/nL73OdJ.png'), // mood 8
+    loadImage('https://i.imgur.com/NmvBzjZ.png'), // mood 9
+    loadImage('https://i.imgur.com/s9eNcR5.png')  // mood 10
+  ];
 }
 
 function setup() {
   createCanvas(900, 550);
 
-  let input = createInput("", "number");
+  let input = createInput("");
   input.position(30, 30);
-  input.attribute("placeholder", "Введите настроение 1–10");
-  input.style('width','60px');
-  input.style('color','#fff');
-  input.style('background','#0a0a0a');
-  input.style('border','1px solid #333');
-  input.style('padding','6px');
-  input.input(() => {
-    let val = int(input.value());
-    if (val >= 1 && val <= 10) {
-      targetMood = val;
-      lastMoodChangeTime = millis();
-      showImage = false;
-      imageScale = 0;
-      imageAlpha = 0;
-      moodHistory.push({time: millis(), mood: targetMood});
-      input.value(""); // очищаем поле после ввода
+  input.attribute('placeholder', 'Введите настроение 1–10');
+  styleInput(input);
+
+  // обработка только по Enter
+  input.elt.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      let val = int(input.value());
+      if (val >= 1 && val <= 10) {
+        targetMood = val;
+        lastMoodChangeTime = millis();
+        showImage = false;
+        imageScale = 0;
+        imageAlpha = 0;
+        moodHistory.push({time: millis(), mood: targetMood});
+        input.value(""); // очищаем поле после Enter
+      }
     }
   });
 
@@ -87,6 +81,7 @@ function draw() {
 
   background(10, 10, 20);
 
+  // проверяем, прошло ли 5 секунд без изменения настроения
   if (millis() - lastMoodChangeTime > 5000) {
     showImage = true;
   }
@@ -118,14 +113,18 @@ class Particle {
     this.y = height / 2;
     this.offset = random(1000);
     this.size = random(2, 5);
+    this.targetX = random(width);
+    this.targetY = random(height);
   }
 
   update(chaos, speed, pull, spread) {
     let t = frameCount * 0.01 * speed;
-    let targetX = width/2 + (noise(this.offset + frameCount*0.01)-0.5)*width*spread;
-    let targetY = height/2 + (noise(this.offset + 100 + frameCount*0.01)-0.5)*height*spread;
-    this.x = lerp(this.x, targetX, 0.02);
-    this.y = lerp(this.y, targetY, 0.02);
+    this.targetX = width/2 + (noise(this.offset + frameCount*0.01)-0.5)*width*spread;
+    this.targetY = height/2 + (noise(this.offset + 100 + frameCount*0.01)-0.5)*height*spread;
+
+    this.x = lerp(this.x, this.targetX, 0.02);
+    this.y = lerp(this.y, this.targetY, 0.02);
+
     this.x += map(noise(this.offset, t), 0, 1, -chaos, chaos);
     this.y += map(noise(this.offset + 100, t), 0, 1, -chaos, chaos);
   }
@@ -140,14 +139,16 @@ class Particle {
       fill(r, 80, b, 15);
       ellipse(this.x, this.y, this.size * i * 2 + pulse);
     }
+
     fill(r, 150, b, 180);
     ellipse(this.x, this.y, this.size + pulse);
   }
 }
 
 function drawMoodImage(scaleVal, alphaVal) {
-  let moodIndex = constrain(floor(mood)-1, 0, 9);
+  let moodIndex = constrain(floor(mood) - 1, 0, 9);
   let img = images[moodIndex];
+
   push();
   imageMode(CENTER);
   tint(255, alphaVal);
@@ -158,7 +159,7 @@ function drawMoodImage(scaleVal, alphaVal) {
 }
 
 function drawUI() {
-  let moodIndex = constrain(floor(mood)-1, 0, 9);
+  let moodIndex = constrain(floor(mood) - 1, 0, 9);
 
   fill(255, textAlpha);
   textSize(16);
@@ -175,22 +176,42 @@ function drawUI() {
 function drawMoodGraph() {
   if (moodHistory.length < 2) return;
 
-  let margin = 50;
+  let graphWidth = 300;
+  let graphHeight = 120;
+  let margin = 20;
+  let x0 = width - graphWidth - margin;
+  let y0 = height - graphHeight - margin;
+
   stroke(255, 180);
   noFill();
   beginShape();
   for (let i = 0; i < moodHistory.length; i++) {
-    let x = map(i, 0, moodHistory.length-1, margin, width-margin);
-    let y = map(moodHistory[i].mood, 1, 10, height-margin, margin);
+    let x = map(i, 0, moodHistory.length - 1, x0 + 10, x0 + graphWidth - 10);
+    let y = map(moodHistory[i].mood, 1, 10, y0 + graphHeight - 10, y0 + 10);
     vertex(x, y);
   }
   endShape();
 
   for (let i = 0; i < moodHistory.length; i++) {
-    let x = map(i, 0, moodHistory.length-1, margin, width-margin);
-    let y = map(moodHistory[i].mood, 1, 10, height-margin, margin);
+    let x = map(i, 0, moodHistory.length - 1, x0 + 10, x0 + graphWidth - 10);
+    let y = map(moodHistory[i].mood, 1, 10, y0 + graphHeight - 10, y0 + 10);
     fill(255);
     noStroke();
     ellipse(x, y, 6);
+
+    fill(200);
+    textSize(10);
+    text(floor((moodHistory[i].time - moodHistory[0].time)/1000) + "с", x-8, y0 + graphHeight + 12);
   }
+
+  noFill();
+  stroke(180, 100);
+  rect(x0, y0, graphWidth, graphHeight);
+}
+
+function styleInput(input) {
+  input.style('background', '#0a0a0a');
+  input.style('color', '#fff');
+  input.style('border', '1px solid #333');
+  input.style('padding', '6px');
 }
