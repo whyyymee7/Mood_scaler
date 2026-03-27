@@ -1,5 +1,5 @@
-let mood = 1;
-let targetMood = 1;
+let mood = 5;
+let targetMood = 5;
 
 let particles = [];
 let imprints = [];
