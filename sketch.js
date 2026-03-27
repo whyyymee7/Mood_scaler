@@ -12,6 +12,33 @@ let imageAlpha = 0;
 
 let inputField;
 
+// тексты
+let moodTexts = [
+  "Полный упадок",
+  "Очень плохо",
+  "Низкое состояние",
+  "Легкая апатия",
+  "Нейтрально",
+  "Нормально",
+  "Хорошо",
+  "Очень хорошо",
+  "Отлично",
+  "Эйфория"
+];
+
+let moodAdvice = [
+  "Отдохни и замедлись",
+  "Поговори с кем-то",
+  "Смени обстановку",
+  "Сделай маленькое действие",
+  "Просто наблюдай",
+  "Продолжай в том же темпе",
+  "Используй энергию",
+  "Действуй активно",
+  "Лови момент",
+  "Создавай максимум"
+];
+
 function preload() {
   images = [
     loadImage('https://i.imgur.com/B4rsCjc.png'),
@@ -30,12 +57,9 @@ function preload() {
 function setup() {
   createCanvas(900, 550);
 
-  // 👉 ЧИСТИМ старые кривые данные автоматически
-  localStorage.removeItem('moodData');
-
   inputField = createInput("");
   inputField.position(30, 30);
-  inputField.attribute('placeholder', '1–10 + Enter');
+  inputField.attribute('placeholder', 'Введите 1–10 и нажмите Enter');
   styleInput(inputField);
 
   inputField.elt.addEventListener("keydown", (e) => {
@@ -45,6 +69,11 @@ function setup() {
       if (val >= 1 && val <= 10) {
         targetMood = val;
         lastMoodChangeTime = millis();
+
+        // СБРОС визуала (ВАЖНО)
+        showImage = false;
+        imageScale = 0;
+        imageAlpha = 0;
 
         let now = new Date();
 
@@ -69,12 +98,14 @@ function draw() {
 
   mood = lerp(mood, targetMood, 0.05);
 
+  // частицы
   for (let p of particles) {
     p.update();
     p.display();
   }
 
-  if (millis() - lastMoodChangeTime > 3000) {
+  // ПОЯВЛЕНИЕ КАРТИНКИ ЧЕРЕЗ 5 СЕК
+  if (millis() - lastMoodChangeTime > 5000) {
     showImage = true;
   }
 
@@ -85,27 +116,37 @@ function draw() {
   }
 
   drawGraph();
-
-  drawCurrentValue();
+  drawTextInfo();
 }
 
 class Particle {
   constructor() {
-    this.x = width / 2;
-    this.y = height / 2;
+    this.reset();
+  }
+
+  reset() {
+    this.x = random(width);
+    this.y = random(height);
     this.offset = random(1000);
   }
 
   update() {
-    let speed = map(mood, 1, 10, 0.01, 0.05);
-    this.x += noise(this.offset, frameCount * speed) * 4 - 2;
-    this.y += noise(this.offset + 100, frameCount * speed) * 4 - 2;
+    let speed = map(mood, 1, 10, 0.5, 2);
+
+    this.x += noise(this.offset, frameCount * 0.01) * speed - speed/2;
+    this.y += noise(this.offset + 100, frameCount * 0.01) * speed - speed/2;
+
+    // если улетела — возвращаем
+    if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+      this.reset();
+    }
   }
 
   display() {
     let r = map(mood, 1, 10, 100, 255);
     let b = map(mood, 1, 10, 255, 100);
-    fill(r, 100, b, 150);
+
+    fill(r, 120, b, 150);
     noStroke();
     circle(this.x, this.y, 3);
   }
@@ -119,7 +160,7 @@ function drawImage() {
   tint(255, imageAlpha);
   translate(width/2, height/2);
   scale(imageScale);
-  image(images[idx], 0, 0, 200, 200);
+  image(images[idx], 0, 0, 220, 220);
   pop();
 }
 
@@ -129,63 +170,61 @@ function drawGraph() {
   let x0 = width - w - 20;
   let y0 = height - h - 20;
 
-  let now = Date.now();
-  let timeWindow = 1000 * 60 * 3; // 3 минуты
+  let maxPoints = 15;
+  let data = moodHistory.slice(-maxPoints);
 
-  let visible = moodHistory.filter(p => now - p.time <= timeWindow);
+  if (data.length < 2) return;
 
-  if (visible.length < 2) return;
-
-  let minTime = now - timeWindow;
-
-  // фон
   noStroke();
   fill(15, 15, 30, 200);
   rect(x0, y0, w, h, 12);
 
-  // линия
   stroke(0, 200, 255);
   strokeWeight(2);
   noFill();
   beginShape();
 
-  for (let p of visible) {
-    let x = map(p.time, minTime, now, x0 + 10, x0 + w - 10);
-    let y = map(p.mood, 1, 10, y0 + h - 20, y0 + 10);
+  for (let i = 0; i < data.length; i++) {
+    let x = map(i, 0, maxPoints - 1, x0 + 10, x0 + w - 10);
+    let y = map(data[i].mood, 1, 10, y0 + h - 20, y0 + 10);
     vertex(x, y);
   }
 
   endShape();
 
-  // точки
-  for (let p of visible) {
-    let x = map(p.time, minTime, now, x0 + 10, x0 + w - 10);
-    let y = map(p.mood, 1, 10, y0 + h - 20, y0 + 10);
+  for (let i = 0; i < data.length; i++) {
+    let x = map(i, 0, maxPoints - 1, x0 + 10, x0 + w - 10);
+    let y = map(data[i].mood, 1, 10, y0 + h - 20, y0 + 10);
 
     fill(0, 255, 255);
     noStroke();
     circle(x, y, 5);
-
-    fill(180);
-    textSize(10);
-    text(p.label, x - 15, y0 + h - 5);
   }
 
-  // рамка
   noFill();
   stroke(100);
   rect(x0, y0, w, h, 12);
 }
 
-function drawCurrentValue() {
+function drawTextInfo() {
+  let idx = constrain(floor(mood) - 1, 0, 9);
+
   fill(255);
   textSize(16);
-  text("Текущее настроение: " + floor(mood), 30, 80);
+  text("Настроение: " + floor(mood), 30, 90);
+
+  textSize(14);
+  fill(180);
+  text(moodTexts[idx], 30, 115);
+
+  fill(120, 200, 255);
+  text(moodAdvice[idx], 30, 140);
 }
 
 function styleInput(input) {
   input.style('background', '#0a0a0a');
   input.style('color', '#fff');
   input.style('border', '1px solid #333');
-  input.style('padding', '6px');
+  input.style('padding', '8px');
+  input.style('font-size', '14px');
 }
