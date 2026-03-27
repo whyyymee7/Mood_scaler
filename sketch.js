@@ -1,6 +1,7 @@
 let mood = 5;
 let targetMood = 5;
 let particles = [];
+let moodHistory = []; // история настроений
 let moodTips = [
   "Попробуй сделать паузу и вдохнуть глубоко",
   "Лёгкая разминка или прогулка помогут поднять настроение",
@@ -65,7 +66,8 @@ function setup() {
       showImage = false;
       imageScale = 0;
       imageAlpha = 0;
-      input.value(""); // очищаем поле после ввода
+      moodHistory.push({time: millis(), mood: targetMood}); // добавляем в историю
+      input.value(""); // очищаем поле
     }
   });
 
@@ -101,6 +103,8 @@ function draw() {
     imageAlpha = lerp(imageAlpha, 255, 0.05);
     drawMoodImage(imageScale, imageAlpha);
   }
+
+  drawMoodGraph(); // рисуем график истории
 }
 
 class Particle {
@@ -166,4 +170,28 @@ function drawUI() {
   fill(180, textAlpha);
   textSize(14);
   text(moodTips[moodIndex], 30, height-15);
+}
+
+function drawMoodGraph() {
+  if (moodHistory.length < 2) return;
+
+  let margin = 50;
+  stroke(255, 180);
+  noFill();
+  beginShape();
+  for (let i = 0; i < moodHistory.length; i++) {
+    let x = map(i, 0, moodHistory.length-1, margin, width-margin);
+    let y = map(moodHistory[i].mood, 1, 10, height-margin, margin);
+    vertex(x, y);
+  }
+  endShape();
+
+  // точки на графике
+  for (let i = 0; i < moodHistory.length; i++) {
+    let x = map(i, 0, moodHistory.length-1, margin, width-margin);
+    let y = map(moodHistory[i].mood, 1, 10, height-margin, margin);
+    fill(255);
+    noStroke();
+    ellipse(x, y, 6);
+  }
 }
