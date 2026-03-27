@@ -18,8 +18,8 @@ let moodTips = [
 ];
 
 let moodNames = [
-  "Очень плохо","Плохо","Грустно","Нейтрально",
-  "Спокойно","Нормально","Хорошо","Очень хорошо","Отлично","Эйфория"
+  "Очень плохо","Плохо","Немного грустно","Нейтрально",
+  "Слегка бодро","Хорошо","Очень хорошо","Отлично","Эйфория","Великолепно"
 ];
 
 let textAlpha = 0;
@@ -32,7 +32,7 @@ let imageAlpha = 0;
 
 let input;
 
-// ---------- preload ----------
+// -------------------- preload --------------------
 function preload() {
   images[0] = loadImage("https://i.imgur.com/Eb3yJuZ.png");
   images[1] = loadImage("https://i.imgur.com/MUPcf8u.png");
@@ -46,38 +46,46 @@ function preload() {
   images[9] = loadImage("https://i.imgur.com/s9eNcR5.png");
 }
 
-// ---------- setup ----------
+// -------------------- setup --------------------
 function setup() {
   createCanvas(900, 550);
 
   input = createInput("");
   input.position(30, 45);
-  input.attribute('placeholder', 'Введите 1–10 и нажмите Enter');
   styleInput(input);
+  input.attribute('placeholder', '1–10');
 
   input.elt.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleMoodInput();
+    if (e.key === "Enter") {
+      handleMoodInput();
+    }
   });
 
   for (let i = 0; i < 220; i++) {
     particles.push(new Particle());
   }
+
+  lastMoodChangeTime = millis();
 }
 
-// ---------- draw ----------
+// -------------------- draw --------------------
 function draw() {
-  background(8, 8, 18);
-
-  mood = lerp(mood, targetMood, 0.05);
+  mood = lerp(mood, targetMood, 0.03);
   textAlpha = lerp(textAlpha, 255, 0.05);
 
-  // эффекты частиц
-  let chaos = map(mood, 1, 10, 0.3, 2.5);
-  let spread = map(mood, 1, 10, 0.1, 1.2);
+  background(10, 10, 20);
+
+  if (millis() - lastMoodChangeTime > 5000) {
+    showImage = true;
+  }
+
+  let chaos = map(mood, 1, 10, 0.3, 1.8);
+  let speed = map(mood, 1, 10, 0.1, 0.5);
+  let spread = map(mood, 1, 10, 0.2, 1);
 
   blendMode(ADD);
   for (let p of particles) {
-    p.update(chaos, spread);
+    p.update(chaos, speed, spread);
     p.display();
   }
   blendMode(BLEND);
@@ -88,190 +96,160 @@ function draw() {
     if (imprints[i].life <= 0) imprints.splice(i, 1);
   }
 
-  if (lastMoodChangeTime > 0 && millis() - lastMoodChangeTime > 5000) {
-    showImage = true;
-  }
+  drawTimeline();
+  drawUI();
 
   if (showImage) {
     imageScale = lerp(imageScale, 1, 0.05);
     imageAlpha = lerp(imageAlpha, 255, 0.05);
-    drawMoodImage();
+    drawMoodImage(imageScale, imageAlpha);
   }
-
-  drawTimeline();
-  drawUI();
 }
 
-// ---------- handle input ----------
+// -------------------- handle input --------------------
 function handleMoodInput() {
   let val = int(input.value());
-
   if (!isNaN(val) && val >= 1 && val <= 10) {
     targetMood = val;
+
+    saveMood(val);
+    imprints.push(new Imprint(random(width), random(height), val));
+
     lastMoodChangeTime = millis();
     showImage = false;
     imageScale = 0;
     imageAlpha = 0;
-    textAlpha = 0;
-
-    saveMood(val);
-    imprints.push(new Imprint(random(width), random(height), val));
 
     input.value('');
   }
 }
 
-// ---------- save ----------
+// -------------------- save mood --------------------
 function saveMood(value) {
   let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
-  history.push({ value: value, time: Date.now() });
-  if (history.length > 15) history.shift();
+  history.push(value);
+
+  // максимум 10 записей
+  if (history.length > 10) {
+    history.splice(0, history.length - 10);
+  }
+
   localStorage.setItem("moodHistory", JSON.stringify(history));
 }
 
-// ---------- particle ----------
-class Particle {
-  constructor() {
-    this.x = random(width);
-    this.y = random(height);
-    this.offset = random(1000);
-    this.size = random(2, 4);
-  }
-
-  update(chaos, spread) {
-    let tx = width/2 + (noise(this.offset, frameCount*0.01)-0.5) * width*spread;
-    let ty = height/2 + (noise(this.offset+100, frameCount*0.01)-0.5) * height*spread;
-
-    this.x = lerp(this.x, tx, 0.02);
-    this.y = lerp(this.y, ty, 0.02);
-
-    this.x += random(-chaos, chaos);
-    this.y += random(-chaos, chaos);
-
-    let d = dist(this.x, this.y, mouseX, mouseY);
-    if (d < 100) {
-      this.x += (this.x - mouseX)*0.01;
-      this.y += (this.y - mouseY)*0.01;
-    }
-
-    if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
-      this.x = random(width);
-      this.y = random(height);
-    }
-  }
-
-  display() {
-    let r = map(mood, 1, 10, 80, 255);
-    let g = map(mood, 1, 10, 80, 180);
-    let b = map(mood, 1, 10, 180, 255);
-    noStroke();
-    fill(r, g, b, 60);
-    ellipse(this.x, this.y, this.size);
-  }
-}
-
-// ---------- imprint ----------
+// -------------------- classes --------------------
 class Imprint {
   constructor(x, y, moodValue) {
     this.x = x;
     this.y = y;
     this.mood = moodValue;
     this.life = 255;
-    this.size = random(60, 120);
+    this.size = random(50, 120);
   }
-
-  update() {
-    this.life -= 1;
-  }
-
+  update() { this.life -= 0.4; }
   display() {
-    let r = map(this.mood, 1, 10, 80, 255);
-    let g = map(this.mood, 1, 10, 80, 180);
-    let b = map(this.mood, 1, 10, 180, 255);
+    let r = map(this.mood, 1, 10, 120, 255);
+    let b = map(this.mood, 1, 10, 255, 120);
     noFill();
-    stroke(r, g, b, this.life);
+    stroke(r, 100, b, this.life);
     ellipse(this.x, this.y, this.size);
   }
 }
 
-// ---------- timeline ----------
+class Particle {
+  constructor() {
+    this.x = width / 2;
+    this.y = height / 2;
+    this.offset = random(1000);
+    this.size = random(2, 5);
+  }
+  update(chaos, speed, spread) {
+    let t = frameCount * 0.01 * speed;
+    let tx = width/2 + (noise(this.offset + t)-0.5)*width*spread;
+    let ty = height/2 + (noise(this.offset + 100 + t)-0.5)*height*spread;
+    this.x = lerp(this.x, tx, 0.02);
+    this.y = lerp(this.y, ty, 0.02);
+    this.x += random(-chaos, chaos);
+    this.y += random(-chaos, chaos);
+  }
+  display() {
+    let r = map(mood, 1, 10, 120, 255);
+    let b = map(mood, 1, 10, 255, 120);
+    noStroke();
+    fill(r, 100, b, 40);
+    ellipse(this.x, this.y, this.size);
+  }
+}
+
+// -------------------- timeline --------------------
 function drawTimeline() {
   let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
   if (history.length < 2) return;
 
   let x0 = 480, y0 = 520, w = 380, h = 130;
-
   stroke(255, 40);
   noFill();
-  rect(x0, y0 - h, w, h, 8);
+  rect(x0, y0 - h, w, h);
+
+  drawingContext.shadowBlur = 10;
+  drawingContext.shadowColor = "cyan";
 
   stroke(0, 200, 255);
   strokeWeight(2);
   noFill();
   beginShape();
   for (let i = 0; i < history.length; i++) {
-    let x = map(i, 0, 14, x0, x0 + w);
-    let y = map(history[i].value, 1, 10, y0, y0 - h);
+    let x = map(i, 0, 9, x0, x0 + w);
+    let y = map(history[i], 1, 10, y0, y0 - h);
     curveVertex(x, y);
   }
   endShape();
+  drawingContext.shadowBlur = 0;
 
   for (let i = 0; i < history.length; i++) {
-    let x = map(i, 0, 14, x0, x0 + w);
-    let y = map(history[i].value, 1, 10, y0, y0 - h);
+    let x = map(i, 0, 9, x0, x0 + w);
+    let y = map(history[i], 1, 10, y0, y0 - h);
     noStroke();
     fill(0, 200, 255);
-    ellipse(x, y, 5);
-
-    fill(180);
-    textSize(10);
-    text(formatTime(new Date(history[i].time)), x-20, y0 + 15);
+    ellipse(x, y, 4);
   }
 }
 
-function formatTime(date) {
-  let h = nf(date.getHours(), 2);
-  let m = nf(date.getMinutes(), 2);
-  return `${h}:${m}`;
-}
-
-// ---------- mood image ----------
-function drawMoodImage() {
-  let img = images[constrain(targetMood-1,0,9)];
+// -------------------- mood image --------------------
+function drawMoodImage(scaleVal, alphaVal) {
+  let img = images[constrain(targetMood - 1, 0, 9)];
   push();
   imageMode(CENTER);
-  tint(255, imageAlpha);
+  tint(255, alphaVal);
   translate(width/2, height/2);
-  scale(imageScale);
-  image(img, 0, 0, 230, 230);
+  scale(scaleVal);
+  image(img, 0, 0, 220, 220);
   pop();
 }
 
-// ---------- UI ----------
+// -------------------- UI --------------------
 function drawUI() {
-  let idx = constrain(targetMood-1, 0, 9);
+  let moodIndex = constrain(targetMood - 1, 0, 9);
+
   fill(255, textAlpha);
   textSize(16);
-  text("ЭМОЦИОНАЛЬНОЕ ПОЛЕ", 30, height-70);
+  text("ЭМОЦИОНАЛЬНОЕ ПОЛЕ", 30, height - 70);
 
-  fill(180);
+  fill(255, 180);
   textSize(12);
-  text("Введите настроение (1–10) и нажмите Enter", 30, 30);
+  text("Введите настроение (1–10) и нажмите Enter", 30, 35);
 
   textSize(18);
-  fill(255);
-  text("Настроение: " + moodNames[idx], 30, height-40);
+  text("Настроение: " + moodNames[moodIndex], 30, height - 40);
 
-  fill(120, 200, 255);
+  fill(180, textAlpha);
   textSize(14);
-  text(moodTips[idx], 30, height-15);
+  text(moodTips[moodIndex], 30, height - 15);
 }
 
-// ---------- style ----------
 function styleInput(input) {
   input.style('background', '#0a0a0a');
   input.style('color', '#fff');
   input.style('border', '1px solid #333');
-  input.style('padding', '8px');
-  input.style('font-size', '14px');
+  input.style('padding', '6px');
 }
