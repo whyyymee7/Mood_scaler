@@ -33,7 +33,6 @@ let imageAlpha = 0;
 let input;
 let sideMargin = 20;
 let bottomMargin = 20;
-let textSpacing = 5;
 
 // -------------------- preload --------------------
 function preload() {
@@ -218,16 +217,18 @@ function drawMoodImage(scaleVal, alphaVal) {
 function drawUI() {
   let moodIndex = constrain(targetMood - 1, 0, 9);
 
+  // левый нижний угол с учётом высоты текста
   let textX = sideMargin;
-  let textY = height - bottomMargin - 40; // левый нижний угол
+  let textY = height - bottomMargin;
 
   fill(255, 180);
   textSize(18);
+  textAlign(LEFT, BOTTOM);
   text("Настроение: " + moodNames[moodIndex], textX, textY);
 
   fill(180, textAlpha);
   textSize(14);
-  text(moodTips[moodIndex], textX, textY + 22);
+  text(moodTips[moodIndex], textX, textY - 22);
 }
 
 // -------------------- style input --------------------
@@ -241,7 +242,7 @@ function styleInput(input) {
 
 // -------------------- position input --------------------
 function positionInput() {
-  input.position(sideMargin, sideMargin); // input сверху слева
+  input.position(sideMargin, sideMargin);
 }
 
 // -------------------- resize --------------------
