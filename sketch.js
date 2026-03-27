@@ -1,8 +1,28 @@
 let mood = 5;
 let targetMood = 5;
-let particles = [];
-let moodHistory = [];
 
+let particles = [];
+let imprints = [];
+
+let moodTips = [
+  "Попробуй сделать паузу и вдохнуть глубоко",
+  "Лёгкая разминка или прогулка помогут поднять настроение",
+  "Слушай любимую музыку",
+  "Попробуй выполнить маленькое приятное дело",
+  "Вдохни и сосредоточься на себе",
+  "Пиши свои мысли, это помогает понять чувства",
+  "Общение с другом поднимет настроение",
+  "Сделай что-то творческое",
+  "Подумай о своих достижениях",
+  "Радуй себя и делай то, что любишь"
+];
+
+let moodNames = [
+  "Очень плохо","Плохо","Немного грустно","Нейтрально",
+  "Слегка бодро","Хорошо","Очень хорошо","Отлично","Эйфория","Великолепно"
+];
+
+let textAlpha = 0;
 let images = [];
 
 let lastMoodChangeTime = 0;
@@ -10,83 +30,125 @@ let showImage = false;
 let imageScale = 0;
 let imageAlpha = 0;
 
-let inputField;
+let input;
 
+// -------------------- preload --------------------
 function preload() {
-  images = [
-    loadImage('https://i.imgur.com/B4rsCjc.png'),
-    loadImage('https://i.imgur.com/Eb3yJuZ.png'),
-    loadImage('https://i.imgur.com/V4dPbG0.png'),
-    loadImage('https://i.imgur.com/5Qfr5cu.png'),
-    loadImage('https://i.imgur.com/yBhbB1u.png'),
-    loadImage('https://i.imgur.com/35fri81.png'),
-    loadImage('https://i.imgur.com/fGu9peL.png'),
-    loadImage('https://i.imgur.com/nL73OdJ.png'),
-    loadImage('https://i.imgur.com/NmvBzjZ.png'),
-    loadImage('https://i.imgur.com/s9eNcR5.png')
-  ];
+  images[0] = loadImage("https://i.imgur.com/Eb3yJuZ.png");
+  images[1] = loadImage("https://i.imgur.com/MUPcf8u.png");
+  images[2] = loadImage("https://i.imgur.com/V4dPbG0.png");
+  images[3] = loadImage("https://i.imgur.com/5Qfr5cu.png");
+  images[4] = loadImage("https://i.imgur.com/yBhbB1u.png");
+  images[5] = loadImage("https://i.imgur.com/35fri81.png");
+  images[6] = loadImage("https://i.imgur.com/fGu9peL.png");
+  images[7] = loadImage("https://i.imgur.com/nL73OdJ.png");
+  images[8] = loadImage("https://i.imgur.com/NmvBzjZ.png");
+  images[9] = loadImage("https://i.imgur.com/s9eNcR5.png");
 }
 
+// -------------------- setup --------------------
 function setup() {
   createCanvas(900, 550);
 
-  // 👉 ЧИСТИМ старые кривые данные автоматически
-  localStorage.removeItem('moodData');
+  input = createInput("");
+  input.position(30, 45);
+  styleInput(input);
+  input.attribute('placeholder', '1–10');
 
-  inputField = createInput("");
-  inputField.position(30, 30);
-  inputField.attribute('placeholder', '1–10 + Enter');
-  styleInput(inputField);
-
-  inputField.elt.addEventListener("keydown", (e) => {
+  // ввод только по Enter
+  input.elt.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
-      let val = int(inputField.value());
-
-      if (val >= 1 && val <= 10) {
-        targetMood = val;
-        lastMoodChangeTime = millis();
-
-        let now = new Date();
-
-        moodHistory.push({
-          mood: val,
-          time: now.getTime(),
-          label: now.toLocaleTimeString().slice(0,5)
-        });
-
-        inputField.value("");
-      }
+      handleMoodInput();
     }
   });
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 220; i++) {
     particles.push(new Particle());
   }
+
+  lastMoodChangeTime = millis();
 }
 
+// -------------------- draw --------------------
 function draw() {
+  mood = lerp(mood, targetMood, 0.03);
+  textAlpha = lerp(textAlpha, 255, 0.05);
+
   background(10, 10, 20);
 
-  mood = lerp(mood, targetMood, 0.05);
-
-  for (let p of particles) {
-    p.update();
-    p.display();
-  }
-
-  if (millis() - lastMoodChangeTime > 3000) {
+  if (millis() - lastMoodChangeTime > 5000) {
     showImage = true;
   }
+
+  let chaos = map(mood, 1, 10, 0.3, 1.8);
+  let speed = map(mood, 1, 10, 0.1, 0.5);
+  let spread = map(mood, 1, 10, 0.2, 1);
+
+  blendMode(ADD);
+  for (let p of particles) {
+    p.update(chaos, speed, spread);
+    p.display();
+  }
+  blendMode(BLEND);
+
+  for (let i = imprints.length - 1; i >= 0; i--) {
+    imprints[i].update();
+    imprints[i].display();
+    if (imprints[i].life <= 0) imprints.splice(i, 1);
+  }
+
+  drawTimeline();
+  drawUI();
 
   if (showImage) {
     imageScale = lerp(imageScale, 1, 0.05);
     imageAlpha = lerp(imageAlpha, 255, 0.05);
-    drawImage();
+    drawMoodImage(imageScale, imageAlpha);
   }
+}
 
-  drawGraph();
+// -------------------- handle input --------------------
+function handleMoodInput() {
+  let val = int(input.value());
+  if (!isNaN(val) && val >= 1 && val <= 10) {
+    targetMood = val;
 
-  drawCurrentValue();
+    saveMood(val);
+    imprints.push(new Imprint(random(width), random(height), val));
+
+    lastMoodChangeTime = millis();
+    showImage = false;
+    imageScale = 0;
+    imageAlpha = 0;
+
+    input.value(''); // очищаем поле после Enter
+  }
+}
+
+// -------------------- save mood --------------------
+function saveMood(value) {
+  let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
+  history.push({ value: value, time: Date.now() });
+  localStorage.setItem("moodHistory", JSON.stringify(history));
+}
+
+// -------------------- classes --------------------
+class Imprint {
+  constructor(x, y, moodValue) {
+    this.x = x;
+    this.y = y;
+    this.mood = moodValue;
+    this.life = 255;
+    this.size = random(50, 120);
+  }
+  update() { this.life -= 0.4; }
+  display() {
+    let r = map(this.mood, 1, 10, 120, 255);
+    let b = map(this.mood, 1, 10, 255, 120);
+    noFill();
+    stroke(r, 100, b, this.life);
+    ellipse(this.x, this.y, this.size);
+  }
 }
 
 class Particle {
@@ -94,93 +156,107 @@ class Particle {
     this.x = width / 2;
     this.y = height / 2;
     this.offset = random(1000);
+    this.size = random(2, 5);
   }
-
-  update() {
-    let speed = map(mood, 1, 10, 0.01, 0.05);
-    this.x += noise(this.offset, frameCount * speed) * 4 - 2;
-    this.y += noise(this.offset + 100, frameCount * speed) * 4 - 2;
+  update(chaos, speed, spread) {
+    let t = frameCount * 0.01 * speed;
+    let tx = width/2 + (noise(this.offset + t)-0.5)*width*spread;
+    let ty = height/2 + (noise(this.offset + 100 + t)-0.5)*height*spread;
+    this.x = lerp(this.x, tx, 0.02);
+    this.y = lerp(this.y, ty, 0.02);
+    this.x += random(-chaos, chaos);
+    this.y += random(-chaos, chaos);
   }
-
   display() {
-    let r = map(mood, 1, 10, 100, 255);
-    let b = map(mood, 1, 10, 255, 100);
-    fill(r, 100, b, 150);
+    let r = map(mood, 1, 10, 120, 255);
+    let b = map(mood, 1, 10, 255, 120);
     noStroke();
-    circle(this.x, this.y, 3);
+    fill(r, 100, b, 40);
+    ellipse(this.x, this.y, this.size);
   }
 }
 
-function drawImage() {
-  let idx = constrain(floor(mood) - 1, 0, 9);
+// -------------------- timeline --------------------
+function drawTimeline() {
+  let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
+  if (history.length < 2) return;
 
-  push();
-  imageMode(CENTER);
-  tint(255, imageAlpha);
-  translate(width/2, height/2);
-  scale(imageScale);
-  image(images[idx], 0, 0, 200, 200);
-  pop();
-}
+  let x0 = 480, y0 = 520, w = 380, h = 130;
+  stroke(255, 40);
+  noFill();
+  rect(x0, y0 - h, w, h);
 
-function drawGraph() {
-  let w = 320;
-  let h = 140;
-  let x0 = width - w - 20;
-  let y0 = height - h - 20;
+  let minTime = history[0].time;
+  let maxTime = history[history.length - 1].time;
+  if (minTime === maxTime) maxTime += 1;
 
-  let now = Date.now();
-  let timeWindow = 1000 * 60 * 3; // 3 минуты
+  drawingContext.shadowBlur = 10;
+  drawingContext.shadowColor = "cyan";
 
-  let visible = moodHistory.filter(p => now - p.time <= timeWindow);
-
-  if (visible.length < 2) return;
-
-  let minTime = now - timeWindow;
-
-  // фон
-  noStroke();
-  fill(15, 15, 30, 200);
-  rect(x0, y0, w, h, 12);
-
-  // линия
   stroke(0, 200, 255);
   strokeWeight(2);
   noFill();
   beginShape();
-
-  for (let p of visible) {
-    let x = map(p.time, minTime, now, x0 + 10, x0 + w - 10);
-    let y = map(p.mood, 1, 10, y0 + h - 20, y0 + 10);
-    vertex(x, y);
+  for (let i = 0; i < history.length; i++) {
+    let x = map(history[i].time, minTime, maxTime, x0, x0 + w);
+    let y = map(history[i].value, 1, 10, y0, y0 - h);
+    curveVertex(x, y);
   }
-
   endShape();
+  drawingContext.shadowBlur = 0;
 
-  // точки
-  for (let p of visible) {
-    let x = map(p.time, minTime, now, x0 + 10, x0 + w - 10);
-    let y = map(p.mood, 1, 10, y0 + h - 20, y0 + 10);
-
-    fill(0, 255, 255);
+  for (let i = 0; i < history.length; i++) {
+    let x = map(history[i].time, minTime, maxTime, x0, x0 + w);
+    let y = map(history[i].value, 1, 10, y0, y0 - h);
     noStroke();
-    circle(x, y, 5);
-
-    fill(180);
-    textSize(10);
-    text(p.label, x - 15, y0 + h - 5);
+    fill(0, 200, 255);
+    ellipse(x, y, 4);
   }
 
-  // рамка
-  noFill();
-  stroke(100);
-  rect(x0, y0, w, h, 12);
+  fill(180);
+  textSize(10);
+  text(formatTime(new Date(minTime)), x0, y0 + 15);
+  text(formatTime(new Date(maxTime)), x0 + w - 60, y0 + 15);
 }
 
-function drawCurrentValue() {
-  fill(255);
+function formatTime(date) {
+  let h = nf(date.getHours(), 2);
+  let m = nf(date.getMinutes(), 2);
+  let d = nf(date.getDate(), 2);
+  let mo = nf(date.getMonth() + 1, 2);
+  return `${d}.${mo} ${h}:${m}`;
+}
+
+// -------------------- mood image --------------------
+function drawMoodImage(scaleVal, alphaVal) {
+  let img = images[constrain(targetMood - 1, 0, 9)];
+  push();
+  imageMode(CENTER);
+  tint(255, alphaVal);
+  translate(width/2, height/2);
+  scale(scaleVal);
+  image(img, 0, 0, 220, 220);
+  pop();
+}
+
+// -------------------- UI --------------------
+function drawUI() {
+  let moodIndex = constrain(targetMood - 1, 0, 9);
+
+  fill(255, textAlpha);
   textSize(16);
-  text("Текущее настроение: " + floor(mood), 30, 80);
+  text("ЭМОЦИОНАЛЬНОЕ ПОЛЕ", 30, height - 70);
+
+  fill(255, 180);
+  textSize(12);
+  text("Введите настроение (1–10) и нажмите Enter", 30, 35);
+
+  textSize(18);
+  text("Настроение: " + moodNames[moodIndex], 30, height - 40);
+
+  fill(180, textAlpha);
+  textSize(14);
+  text(moodTips[moodIndex], 30, height - 15);
 }
 
 function styleInput(input) {
