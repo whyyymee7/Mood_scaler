@@ -41,20 +41,18 @@ function preload() {
 
 // -------------------- setup --------------------
 function setup() {
-  createCanvas(900, 550);
+  createCanvas(windowWidth, windowHeight);
 
   // Очистка истории при обновлении страницы
   localStorage.removeItem("moodHistory");
 
   input = createInput("");
-  input.position(30, 45);
   styleInput(input);
   input.attribute('placeholder', '1–10');
+  positionInput();
 
   input.elt.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      handleMoodInput();
-    }
+    if (e.key === "Enter") handleMoodInput();
   });
 
   for (let i = 0; i < 220; i++) {
@@ -71,9 +69,7 @@ function draw() {
 
   background(10, 10, 20);
 
-  if (millis() - lastMoodChangeTime > 5000) {
-    showImage = true;
-  }
+  if (millis() - lastMoodChangeTime > 5000) showImage = true;
 
   let chaos = map(mood, 1, 10, 0.3, 1.8);
   let speed = map(mood, 1, 10, 0.1, 0.5);
@@ -107,15 +103,12 @@ function handleMoodInput() {
   let val = int(input.value());
   if (!isNaN(val) && val >= 1 && val <= 10) {
     targetMood = val;
-
     saveMood(val);
     imprints.push(new Imprint(random(width), random(height), val));
-
     lastMoodChangeTime = millis();
     showImage = false;
     imageScale = 0;
     imageAlpha = 0;
-
     input.value('');
   }
 }
@@ -124,12 +117,7 @@ function handleMoodInput() {
 function saveMood(value) {
   let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
   history.push(value);
-
-  // максимум 30 записей
-  if (history.length > 30) {
-    history.splice(0, history.length - 30);
-  }
-
+  if (history.length > 30) history.splice(0, history.length - 30);
   localStorage.setItem("moodHistory", JSON.stringify(history));
 }
 
@@ -182,7 +170,7 @@ function drawTimeline() {
   let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
   if (history.length < 1) return;
 
-  let x0 = 480, y0 = 520, w = 380, h = 130;
+  let x0 = width - 400, y0 = height - 30, w = 380, h = 130;
   stroke(255, 40);
   noFill();
   rect(x0, y0 - h, w, h);
@@ -244,11 +232,11 @@ function drawUI() {
   text("Введите настроение (1–10) и нажмите Enter", 30, 35);
 
   textSize(18);
-  text("Настроение: " + moodNames[moodIndex], 30, height - 40);
+  text("Настроение: " + moodNames[moodIndex], 30, 60);
 
   fill(180, textAlpha);
   textSize(14);
-  text(moodTips[moodIndex], 30, height - 15);
+  text(moodTips[moodIndex], 30, 85);
 }
 
 function styleInput(input) {
@@ -256,4 +244,14 @@ function styleInput(input) {
   input.style('color', '#fff');
   input.style('border', '1px solid #333');
   input.style('padding', '6px');
+}
+
+function positionInput() {
+  input.position(30, 45);
+}
+
+// -------------------- resize --------------------
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  positionInput();
 }
