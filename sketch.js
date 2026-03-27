@@ -227,16 +227,14 @@ function drawMoodImage(scaleVal, alphaVal) {
 function drawUI() {
   let moodIndex = constrain(targetMood - 1, 0, 9);
 
+  // текст ниже input
   fill(255, 180);
-  textSize(12);
-  text("Введите настроение (1–10) и нажмите Enter", 30, 35);
-
   textSize(18);
-  text("Настроение: " + moodNames[moodIndex], 30, 60);
+  text("Настроение: " + moodNames[moodIndex], 30, 90);
 
   fill(180, textAlpha);
   textSize(14);
-  text(moodTips[moodIndex], 30, 85);
+  text(moodTips[moodIndex], 30, 115);
 }
 
 function styleInput(input) {
@@ -244,6 +242,7 @@ function styleInput(input) {
   input.style('color', '#fff');
   input.style('border', '1px solid #333');
   input.style('padding', '6px');
+  input.style('font-size', '16px');
 }
 
 function positionInput() {
